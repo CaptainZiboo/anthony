@@ -13,6 +13,8 @@ services:
       - ./data/openwebui:/app/backend/data
   ollama:
     image: ollama/ollama:latest
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
     ports:
       - "11434:11434"
     volumes:

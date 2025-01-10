@@ -1,5 +1,5 @@
 import { TextLoader } from "langchain/document_loaders/fs/text";
-import { v4 as uuidv4 } from "uuid";
+import * as uuid from "uuid";
 import fs from "fs";
 import path from "path";
 
@@ -25,39 +25,30 @@ export async function POST(request: Request) {
 
     for (const file of files) {
       if (file instanceof File) {
-        const tempFilePath = path.join(UPLOAD_DIR, `${uuidv4()}_${file.name}`);
-        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        const _path = path.join(UPLOAD_DIR, uuid.v4());
+        const buffer = Buffer.from(await file.arrayBuffer());
 
         // Save the file temporarily
-        fs.writeFileSync(tempFilePath, fileBuffer);
+        fs.writeFileSync(_path, buffer);
 
         // Load the document using TextLoader
-        const loader = new TextLoader(tempFilePath);
+        const loader = new TextLoader(_path);
         const docs = await loader.load();
 
         // Collect metadata
-        const metadata = {
-          filename: file.name,
-          size: file.size,
-          mimetype: file.type,
-          content: docs,
-        };
-
-        metadataList.push(metadata);
+        metadataList.push(docs);
 
         // Delete the file after processing
-        fs.unlinkSync(tempFilePath);
+        fs.unlinkSync(_path);
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        message: "Files processed successfully",
-        metadata: metadataList,
-      }),
-      { status: 200 }
-    );
+    return Response.json({
+      message: "Files processed successfully",
+      metadata: metadataList,
+      status: 200,
+    });
   } catch (error: unknown) {
-    return Response.json({ error, status: 500 });
+    return Response.json({ error }, { status: 500 });
   }
 }

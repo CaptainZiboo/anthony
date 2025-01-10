@@ -10,7 +10,8 @@ export default {
   theme: {
   	extend: {
   		colors: {
-  			background: 'hsl(var(--background))',
+			"custom-blue": "rgb(34, 43, 85)",
+			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
@@ -58,5 +59,4 @@ export default {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
 } satisfies Config;

@@ -1,18 +1,24 @@
-'use client';
+"use client";
 import React, { useState } from "react";
-import Chatbot from "./components/Chatbot";
-import { ChatBubbleLeftEllipsisIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import Chatbot from "@/components/llm/chatbot";
+import {
+  ChatBubbleLeftEllipsisIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/solid";
+import UploadForm from "@/components/llm/upload";
 
 const Home: React.FC = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
-  const cookies = document.getElementById('tarteaucitronAlertBig');
+  const cookies = document.getElementById("tarteaucitronAlertBig");
   if (cookies) {
-    cookies.style.display = 'none';
+    cookies.style.display = "none";
   }
 
   return (
     <div className="relative flex flex-col min-h-screen">
+      <UploadForm />
+
       <main className="flex-grow">
         <iframe
           className="w-full h-screen"
@@ -30,9 +36,9 @@ const Home: React.FC = () => {
         className="absolute bottom-4 right-4 bg-custom-blue text-white px-4 py-2 rounded-full shadow-lg hover:bg-white hover:text-custom-blue border border-custom-blue"
       >
         {isChatbotOpen ? (
-            <XMarkIcon className="w-6 h-6" />
-          ) : (
-            <ChatBubbleLeftEllipsisIcon className="w-6 h-6" />
+          <XMarkIcon className="w-6 h-6" />
+        ) : (
+          <ChatBubbleLeftEllipsisIcon className="w-6 h-6" />
         )}
       </button>
     </div>

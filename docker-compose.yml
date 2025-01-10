@@ -1,8 +1,7 @@
 services:
   ollama:
     volumes:
-      - ollama:/root/.ollama
-      - ./ollama:/root/.ollama
+      - ./data/ollama:/root/.ollama
     container_name: ollama
     pull_policy: always
     tty: true
@@ -16,11 +15,21 @@ services:
     ports:
       - 11434:11434
 
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    ports:
+      - 6379:6379
+      - 8001:8001
+    volumes:
+      - ./data/redis:/data
+    restart: unless-stopped
+
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     volumes:
-      - open-webui:/app/backend/data
+      - ./data/open-webui:/app/backend/data
     depends_on:
       - ollama
     ports:
@@ -34,4 +43,5 @@ services:
 
 volumes:
   ollama: {}
+  redis: {}
   open-webui: {}

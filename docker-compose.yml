@@ -1,21 +1,37 @@
 services:
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    restart: always
-    expose:
-      - "8080"
-    ports:
-      - "1234:8080"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - open-webui:/app/backend/data
   ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
     volumes:
       - ollama:/root/.ollama
-volumes:
-  ollama:
+      - ./ollama:/root/.ollama
+    container_name: ollama
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    image: ollama/ollama:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    ports:
+      - 11434:11434
+
   open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    volumes:
+      - open-webui:/app/backend/data
+    depends_on:
+      - ollama
+    ports:
+      - 1234:8080
+    environment:
+      - "OLLAMA_BASE_URL=http://ollama:11434"
+      - "WEBUI_SECRET_KEY="
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+
+volumes:
+  ollama: {}
+  open-webui: {}

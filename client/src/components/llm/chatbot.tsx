@@ -1,17 +1,58 @@
 import React, { useState } from "react";
+import { RotateCcw } from "lucide-react";
 
 interface Message {
   id: number;
   text: string;
   sender: "bot" | "user";
+  type?: "error";
+  retry?: () => void;
 }
 
 const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", sender: "bot" },
+    {
+      id: 1,
+      text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+      sender: "bot",
+    },
   ]);
   const [id, setId] = useState<string | undefined>();
   const [input, setInput] = useState<string>("");
+
+  const send = (message: string, retry?: boolean) =>
+    fetch("/api/llm/chat", {
+      method: "POST",
+      body: JSON.stringify({ message: input, chat_id: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+
+        return res.json();
+      })
+      .then((data) => {
+        // Ajouter la réponse du chatbot
+        setMessages((prev) => [
+          ...(retry ? prev.slice(0, -1) : prev),
+          { id: Date.now(), text: data.response, sender: "bot" },
+        ]);
+        setId(data.id);
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        setMessages((prev) => [
+          ...(retry ? prev.slice(0, -1) : prev),
+          {
+            id: Date.now(),
+            type: "error",
+            text: "Désolé, il y a eu un problème lors de votre requête",
+            sender: "bot",
+            retry: () => send(message, true),
+          },
+        ]);
+      });
 
   const handleSend = () => {
     // Vérifier si l'entrée est vide
@@ -27,26 +68,7 @@ const Chatbot: React.FC = () => {
     setInput("");
 
     // Appeler votre serveur
-    fetch("/api/llm/chat", {
-      method: "POST",
-      body: JSON.stringify({ message: input, chat_id: id }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // Ajouter la réponse du chatbot
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now(), text: data.response, sender: "bot" },
-        ]);
-        setId(data.id);
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now(), text: "Désolé, il y a eu un problème lors de votre requête", sender: "bot" },
-        ])
-      });
+    send(input);
   };
 
   // Gérer l'appui sur la touche Entrée
@@ -72,9 +94,17 @@ const Chatbot: React.FC = () => {
               message.sender === "bot"
                 ? "bg-custom-blue text-white self-start"
                 : "bg-blue-500 text-white self-end"
-            }`}
+            } ${message.type === "error" ? " bg-red-500" : ""}`}
           >
-            {message.text}
+            <p className="inline-flex items-center">
+              {message.text}{" "}
+              {message.type === "error" && (
+                <RotateCcw
+                  className="relative cursor-pointer"
+                  onClick={message.retry}
+                />
+              )}
+            </p>
           </div>
         ))}
       </div>

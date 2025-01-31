@@ -8,32 +8,32 @@ interface Message {
 
 const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Hello! How can I help you today?", sender: "bot" },
+    { id: 1, text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", sender: "bot" },
   ]);
   const [id, setId] = useState<string | undefined>();
   const [input, setInput] = useState<string>("");
 
   const handleSend = () => {
-    // Guard for empty input
+    // Vérifier si l'entrée est vide
     if (!input.trim()) return;
 
-    // Add the user's message
+    // Ajouter le message de l'utilisateur
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), text: input, sender: "user" },
     ]);
 
-    // Clear the input
+    // Effacer le champ de saisie
     setInput("");
 
-    // Make your server call
+    // Appeler votre serveur
     fetch("/api/llm/chat", {
       method: "POST",
       body: JSON.stringify({ message: input, chat_id: id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        // Add the bot's response
+        // Ajouter la réponse du chatbot
         setMessages((prev) => [
           ...prev,
           { id: Date.now(), text: data.response, sender: "bot" },
@@ -41,14 +41,14 @@ const Chatbot: React.FC = () => {
         setId(data.id);
       })
       .catch((err) => {
-        console.error("Error:", err);
+        console.error("Erreur :", err);
       });
   };
 
-  // Handle the Enter key press
+  // Gérer l'appui sur la touche Entrée
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent form submission/new line if needed
+      e.preventDefault(); // Empêche l'envoi du formulaire / saut de ligne si nécessaire
       handleSend();
     }
   };
@@ -59,7 +59,7 @@ const Chatbot: React.FC = () => {
         Chatbot
       </div>
 
-      {/* Chat history */}
+      {/* Historique des messages */}
       <div className="p-4 h-96 overflow-y-scroll flex flex-col space-y-4">
         {messages.map((message) => (
           <div
@@ -75,21 +75,21 @@ const Chatbot: React.FC = () => {
         ))}
       </div>
 
-      {/* Input + Send button */}
+      {/* Zone de saisie + bouton d'envoi */}
       <div className="p-4 border-t border-gray-200 flex">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown} // <- Press Enter to send
+          onKeyDown={handleKeyDown} // <- Appuie sur Entrée pour envoyer
           className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-blue"
-          placeholder="Type your message..."
+          placeholder="Tapez votre message..."
         />
         <button
           onClick={handleSend}
           className="ml-2 px-4 py-2 bg-custom-blue text-white rounded-lg hover:bg-custom-blue"
         >
-          Send
+          Envoyer
         </button>
       </div>
     </div>

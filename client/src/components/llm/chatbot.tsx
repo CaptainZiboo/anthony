@@ -41,7 +41,11 @@ const Chatbot: React.FC = () => {
         setId(data.id);
       })
       .catch((err) => {
-        console.error("Erreur :", err);
+        console.error("Error:", err);
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now(), text: "Désolé, il y a eu un problème lors de votre requête", sender: "bot" },
+        ])
       });
   };
 

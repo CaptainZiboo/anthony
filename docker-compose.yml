@@ -7,11 +7,6 @@ services:
     tty: true
     restart: unless-stopped
     image: ollama/ollama:latest
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
     ports:
       - 11434:11434
 

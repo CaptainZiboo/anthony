@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Message {
   id: number;
@@ -12,28 +12,25 @@ const Chatbot: React.FC = () => {
   ]);
   const [id, setId] = useState<string | undefined>();
   const [input, setInput] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleSend = () => {
-    // Vérifier si l'entrée est vide
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    // Ajouter le message de l'utilisateur
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), text: input, sender: "user" },
     ]);
 
-    // Effacer le champ de saisie
     setInput("");
+    setIsLoading(true);
 
-    // Appeler votre serveur
     fetch("/api/llm/chat", {
       method: "POST",
       body: JSON.stringify({ message: input, chat_id: id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        // Ajouter la réponse du chatbot
         setMessages((prev) => [
           ...prev,
           { id: Date.now(), text: data.response, sender: "bot" },
@@ -41,18 +38,20 @@ const Chatbot: React.FC = () => {
         setId(data.id);
       })
       .catch((err) => {
-        console.error("Error:", err);
+        console.error("Erreur :", err);
         setMessages((prev) => [
           ...prev,
-          { id: Date.now(), text: "Désolé, il y a eu un problème lors de votre requête", sender: "bot" },
-        ])
+          { id: Date.now(), text: "Désolé, une erreur est survenue. Réessayez plus tard.", sender: "bot" },
+        ]);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
-  // Gérer l'appui sur la touche Entrée
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Empêche l'envoi du formulaire / saut de ligne si nécessaire
+      e.preventDefault();
       handleSend();
     }
   };
@@ -77,6 +76,15 @@ const Chatbot: React.FC = () => {
             {message.text}
           </div>
         ))}
+
+        {/* Animation "isTyping" avec 3 points sautants */}
+        {isLoading && (
+          <div className="self-start p-3 bg-gray-200 text-gray-600 rounded-lg max-w-xs text-sm flex items-center space-x-1">
+            <span className="text-lg animate-bounce1">•</span>
+            <span className="text-lg animate-bounce2">•</span>
+            <span className="text-lg animate-bounce3">•</span>
+          </div>
+        )}
       </div>
 
       {/* Zone de saisie + bouton d'envoi */}
@@ -85,17 +93,51 @@ const Chatbot: React.FC = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown} // <- Appuie sur Entrée pour envoyer
-          className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-blue"
+          onKeyDown={handleKeyDown}
+          disabled={isLoading}
+          className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-blue disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Tapez votre message..."
         />
         <button
           onClick={handleSend}
-          className="ml-2 px-4 py-2 bg-custom-blue text-white rounded-lg hover:bg-custom-blue"
+          disabled={isLoading}
+          className="ml-2 px-4 py-2 bg-custom-blue text-white rounded-lg hover:bg-custom-blue disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Envoyer
         </button>
       </div>
+
+      {/* Ajout des styles pour l'animation */}
+      <style jsx>{`
+        @keyframes bounce1 {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-8px); }
+        }
+
+        @keyframes bounce2 {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-8px); }
+        }
+
+        @keyframes bounce3 {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-8px); }
+        }
+
+        .animate-bounce1 {
+          animation: bounce1 1.2s infinite ease-in-out;
+        }
+
+        .animate-bounce2 {
+          animation: bounce2 1.2s infinite ease-in-out;
+          animation-delay: 0.2s;
+        }
+
+        .animate-bounce3 {
+          animation: bounce3 1.2s infinite ease-in-out;
+          animation-delay: 0.4s;
+        }
+      `}</style>
     </div>
   );
 };

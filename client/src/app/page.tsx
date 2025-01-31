@@ -17,8 +17,6 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <UploadForm />
-
       <main className="flex-grow">
         <iframe
           className="w-full h-screen"

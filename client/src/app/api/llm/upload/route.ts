@@ -2,13 +2,22 @@ import * as uuid from "uuid";
 import fs from "fs";
 import path from "path";
 import { TextLoader } from "langchain/document_loaders/fs/text";
+import { JSONLoader } from "langchain/document_loaders/fs/json";
+import { CSVLoader } from "@langchain/community/document_loaders/fs/csv";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import {
-  CharacterTextSplitter,
+  LatexTextSplitter,
+  MarkdownTextSplitter,
   RecursiveCharacterTextSplitter,
+  SupportedTextSplitterLanguage,
+  SupportedTextSplitterLanguages,
+  TokenTextSplitter,
 } from "langchain/text_splitter";
 import { OllamaEmbeddings } from "@langchain/ollama";
 import { RedisVectorStore } from "@langchain/redis";
 import { createClient } from "redis";
+import { redis } from "@/lib/redis";
+import { store } from "@/lib/vector/store";
 
 export const config = {
   api: {
@@ -17,6 +26,83 @@ export const config = {
 };
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads/_tmp");
+
+const isCodeExtension = (
+  extension: string
+): extension is SupportedTextSplitterLanguage => {
+  return extension in SupportedTextSplitterLanguages;
+};
+
+const getDocuments = async (file: File) => {
+  const extension = path.extname(file.name);
+  const _path = path.join(UPLOAD_DIR, `${uuid.v4()}_${file.name}`);
+
+  try {
+    const array_buffer = await file.arrayBuffer();
+    const buffer = Buffer.from(array_buffer);
+
+    // Save the file temporarily
+    fs.writeFileSync(_path, buffer);
+
+    let documents;
+
+    // Load the file as documents
+    switch (extension) {
+      case ".csv":
+        const csv_loader = new CSVLoader(_path);
+        documents = await csv_loader.load();
+        break;
+      case ".json":
+        const json_loader = new JSONLoader(_path);
+        documents = await json_loader.load();
+        break;
+      case ".pdf":
+        const pdf_loader = new PDFLoader(_path);
+        documents = await pdf_loader.load();
+        break;
+      default:
+        const loader = new TextLoader(_path);
+        documents = await loader.load();
+        break;
+    }
+
+    // Split the document into characters
+    switch (extension) {
+      case ".md":
+        const markdown_splitter = new MarkdownTextSplitter();
+        documents = await markdown_splitter.splitDocuments(documents);
+        break;
+      case ".txt":
+        const token_splitter = new TokenTextSplitter();
+        documents = await token_splitter.splitDocuments(documents);
+        break;
+      case ".tex":
+        const latex_splitter = new LatexTextSplitter();
+        documents = await latex_splitter.splitDocuments(documents);
+        break;
+      default:
+        if (isCodeExtension(extension)) {
+          const code_splitter = RecursiveCharacterTextSplitter.fromLanguage(
+            extension,
+            {}
+          );
+          documents = await code_splitter.splitDocuments(documents);
+        }
+
+        const recursive_splitter = new RecursiveCharacterTextSplitter({
+          chunkSize: 1000,
+          chunkOverlap: 200,
+        });
+        documents = await recursive_splitter.splitDocuments(documents);
+        break;
+    }
+
+    return documents;
+  } finally {
+    // Delete the file after processing
+    fs.unlinkSync(_path);
+  }
+};
 
 // Ensure the upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -28,81 +114,24 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const files = formData.getAll("files");
 
-    const metadataList = [];
-
     for (const file of files) {
       if (file instanceof File) {
-        const _path = path.join(UPLOAD_DIR, uuid.v4());
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const documents = await getDocuments(file);
 
-        // Save the file temporarily
-        fs.writeFileSync(_path, buffer);
+        await redis.connect();
 
-        try {
-          // Load the document using TextLoader
-          const loader = new TextLoader(_path);
-          const docs = await loader.load();
-
-          // Split the document into characters
-          const splitter = new CharacterTextSplitter({
-            chunkSize: 100,
-            chunkOverlap: 0,
-          });
-          const texts = await splitter.splitDocuments(docs);
-
-          const recursive_splitter = new RecursiveCharacterTextSplitter();
-
-          const recursive_texts = await recursive_splitter.splitDocuments(
-            texts
-          );
-
-          // if file is HTML, Markdown or JSON
-          const documentSplitter =
-            RecursiveCharacterTextSplitter.getSeparatorsForLanguage("js");
-
-          console.log("Generated recursive_texts");
-
-          const embeddings = new OllamaEmbeddings({
-            model: "mxbai-embed-large",
-            baseUrl: "http://localhost:11434",
-          });
-
-          const client = createClient({
-            url: process.env.REDIS_URL ?? "redis://localhost:6379",
-          });
-
-          await client.connect();
-
-          console.log("Connected to Redis");
-
-          const store = new RedisVectorStore(embeddings, {
-            redisClient: client,
-            indexName: "ollama",
-          });
-
-          await store.addDocuments(recursive_texts);
-
-          console.log("Stored documents in Redis");
-
-          // Collect metadata
-          metadataList.push({
-            docs,
-            recursive_texts,
-          });
-        } catch (error) {
-          throw error;
-        } finally {
-          // Delete the file after processing
-          fs.unlinkSync(_path);
-        }
+        await store.addDocuments(documents);
       }
     }
 
-    return Response.json({
-      message: "Files processed successfully",
-      metadata: metadataList,
-      status: 200,
-    });
+    return Response.json(
+      {
+        message: "Files processed successfully",
+      },
+      {
+        status: 200,
+      }
+    );
   } catch (error: unknown) {
     return Response.json({ error }, { status: 500 });
   }

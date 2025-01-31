@@ -10,15 +10,29 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Hello! How can I help you today?", sender: "bot" },
   ]);
+  const [id, setId] = useState<string | undefined>();
   const [input, setInput] = useState<string>("");
 
   const handleSend = () => {
     if (input.trim()) {
-      setMessages([
-        ...messages,
+      setMessages((state) => [
+        ...state,
         { id: Date.now(), text: input, sender: "user" },
       ]);
-      setInput("");
+
+      fetch("/api/llm/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: input, chat_id: id }),
+      }).then((res) => {
+        res.json().then((data) => {
+          setMessages((state) => [
+            ...state,
+            { id: Date.now(), text: data.response, sender: "bot" },
+          ]);
+
+          setId(data.id);
+        });
+      });
     }
   };
 

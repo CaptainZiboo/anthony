@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "docker compose up -d && docker exec ollama ollama pull mxbai-embed-large && docker exec ollama ollama pull llama3.1 && cd client && pnpm run dev"
+    "dev": "docker compose up -d && docker exec ollama ollama pull mxbai-embed-large && docker exec ollama ollama pull llama3.1 && docker exec ollama ollama run llama3.1 && cd client && pnpm run dev"
   },
   "keywords": [],
   "author": "",

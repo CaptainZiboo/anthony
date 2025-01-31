@@ -4,6 +4,8 @@ interface Message {
   id: number;
   text: string;
   sender: "bot" | "user";
+  type?: "error";
+  retry?: () => void;
 }
 
 interface ChatbotProps {
@@ -109,9 +111,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible }) => {
               message.sender === "bot"
                 ? "bg-custom-blue text-white self-start"
                 : "bg-blue-500 text-white self-end"
-            }`}
+            } ${message.type === "error" ? " bg-red-500" : ""}`}
           >
-            {message.text}
+            <p className="inline-flex items-center">
+              {message.text}{" "}
+              {message.type === "error" && (
+                <RotateCcw
+                  className="relative cursor-pointer"
+                  onClick={message.retry}
+                />
+              )}
+            </p>
           </div>
         ))}
 

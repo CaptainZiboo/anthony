@@ -1,7 +1,8 @@
-import { TextLoader } from "langchain/document_loaders/fs/text";
 import * as uuid from "uuid";
 import fs from "fs";
 import path from "path";
+import { TextLoader } from "langchain/document_loaders/fs/text";
+import { CharacterTextSplitter } from "langchain/text_splitter";
 
 export const config = {
   api: {
@@ -35,8 +36,20 @@ export async function POST(request: Request) {
         const loader = new TextLoader(_path);
         const docs = await loader.load();
 
+        // Split the document into characters
+        const splitter = new CharacterTextSplitter({
+          chunkSize: 100,
+          chunkOverlap: 0,
+        });
+        const texts = await splitter.splitDocuments(docs);
+
+        console.log(texts);
+
         // Collect metadata
-        metadataList.push(docs);
+        metadataList.push({
+          docs,
+          texts,
+        });
 
         // Delete the file after processing
         fs.unlinkSync(_path);

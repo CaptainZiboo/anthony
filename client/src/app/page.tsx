@@ -5,15 +5,9 @@ import {
   ChatBubbleLeftEllipsisIcon,
   XMarkIcon,
 } from "@heroicons/react/24/solid";
-import UploadForm from "@/components/llm/upload";
 
 const Home: React.FC = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-
-  const cookies = document.getElementById("tarteaucitronAlertBig");
-  if (cookies) {
-    cookies.style.display = "none";
-  }
 
   return (
     <div className="relative flex flex-col min-h-screen">

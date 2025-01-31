@@ -6,39 +6,74 @@ interface Message {
   sender: "bot" | "user";
 }
 
-const Chatbot: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", sender: "bot" },
-  ]);
-  const [id, setId] = useState<string | undefined>();
+interface ChatbotProps {
+  isVisible: boolean;
+}
+
+const Chatbot: React.FC<ChatbotProps> = ({ isVisible }) => {
+  const initialMessage: Message = {
+    id: 1,
+    text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+    sender: "bot",
+  };
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem("chatMessages");
+    return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
+  });
+
+  const [id, setId] = useState<string | undefined>(localStorage.getItem("chatId") || undefined);
   const [input, setInput] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(
+    JSON.parse(localStorage.getItem("isLoading") || "false")
+  );
 
-  const handleSend = () => {
-    if (!input.trim() || isLoading) return;
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+  }, [messages]);
 
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now(), text: input, sender: "user" },
-    ]);
+  useEffect(() => {
+    if (id) {
+      localStorage.setItem("chatId", id);
+    }
+  }, [id]);
 
-    setInput("");
+  useEffect(() => {
+    localStorage.setItem("isLoading", JSON.stringify(isLoading));
+  }, [isLoading]);
+
+  // 🔄 Redémarrer une requête en attente après réouverture
+  useEffect(() => {
+    const pendingMessage = localStorage.getItem("pendingMessage");
+    if (isLoading && pendingMessage) {
+      handleSend(pendingMessage, true);
+    }
+  }, []);
+
+  const handleSend = (overrideInput?: string, isRetry = false) => {
+    const messageToSend = overrideInput || input.trim();
+    if (!messageToSend || isLoading) return;
+
+    setMessages((prev) => [...prev, { id: Date.now(), text: messageToSend, sender: "user" }]);
+
+    if (!isRetry) {
+      setInput("");
+      localStorage.setItem("pendingMessage", messageToSend);
+    }
+
     setIsLoading(true);
 
     fetch("/api/llm/chat", {
       method: "POST",
-      body: JSON.stringify({ message: input, chat_id: id }),
+      body: JSON.stringify({ message: messageToSend, chat_id: id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now(), text: data.response, sender: "bot" },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now(), text: data.response, sender: "bot" }]);
         setId(data.id);
+        localStorage.removeItem("pendingMessage");
       })
-      .catch((err) => {
-        console.error("Erreur :", err);
+      .catch(() => {
         setMessages((prev) => [
           ...prev,
           { id: Date.now(), text: "Désolé, une erreur est survenue. Réessayez plus tard.", sender: "bot" },
@@ -57,7 +92,10 @@ const Chatbot: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 w-full max-w-md shadow-lg rounded-lg border border-gray-200 bg-white z-50">
+    <div
+      className="fixed bottom-20 right-4 w-full max-w-md shadow-lg rounded-lg border border-gray-200 bg-white z-50 transition-opacity"
+      style={{ display: isVisible ? "block" : "none" }}
+    >
       <div className="p-4 bg-custom-blue text-white text-center font-bold rounded-t-lg">
         Chatbot
       </div>
@@ -99,7 +137,7 @@ const Chatbot: React.FC = () => {
           placeholder="Tapez votre message..."
         />
         <button
-          onClick={handleSend}
+          onClick={() => handleSend()}
           disabled={isLoading}
           className="ml-2 px-4 py-2 bg-custom-blue text-white rounded-lg hover:bg-custom-blue disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
@@ -109,32 +147,22 @@ const Chatbot: React.FC = () => {
 
       {/* Ajout des styles pour l'animation */}
       <style jsx>{`
-        @keyframes bounce1 {
-          0%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-8px); }
-        }
-
-        @keyframes bounce2 {
-          0%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-8px); }
-        }
-
-        @keyframes bounce3 {
+        @keyframes bounce {
           0%, 80%, 100% { transform: translateY(0); }
           40% { transform: translateY(-8px); }
         }
 
         .animate-bounce1 {
-          animation: bounce1 1.2s infinite ease-in-out;
+          animation: bounce 1.2s infinite ease-in-out;
         }
 
         .animate-bounce2 {
-          animation: bounce2 1.2s infinite ease-in-out;
+          animation: bounce 1.2s infinite ease-in-out;
           animation-delay: 0.2s;
         }
 
         .animate-bounce3 {
-          animation: bounce3 1.2s infinite ease-in-out;
+          animation: bounce 1.2s infinite ease-in-out;
           animation-delay: 0.4s;
         }
       `}</style>

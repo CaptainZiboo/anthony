@@ -14,25 +14,42 @@ const Chatbot: React.FC = () => {
   const [input, setInput] = useState<string>("");
 
   const handleSend = () => {
-    if (input.trim()) {
-      setMessages((state) => [
-        ...state,
-        { id: Date.now(), text: input, sender: "user" },
-      ]);
+    // Guard for empty input
+    if (!input.trim()) return;
 
-      fetch("/api/llm/chat", {
-        method: "POST",
-        body: JSON.stringify({ message: input, chat_id: id }),
-      }).then((res) => {
-        res.json().then((data) => {
-          setMessages((state) => [
-            ...state,
-            { id: Date.now(), text: data.response, sender: "bot" },
-          ]);
+    // Add the user's message
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), text: input, sender: "user" },
+    ]);
 
-          setId(data.id);
-        });
+    // Clear the input
+    setInput("");
+
+    // Make your server call
+    fetch("/api/llm/chat", {
+      method: "POST",
+      body: JSON.stringify({ message: input, chat_id: id }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // Add the bot's response
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now(), text: data.response, sender: "bot" },
+        ]);
+        setId(data.id);
+      })
+      .catch((err) => {
+        console.error("Error:", err);
       });
+  };
+
+  // Handle the Enter key press
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent form submission/new line if needed
+      handleSend();
     }
   };
 
@@ -41,6 +58,8 @@ const Chatbot: React.FC = () => {
       <div className="p-4 bg-custom-blue text-white text-center font-bold rounded-t-lg">
         Chatbot
       </div>
+
+      {/* Chat history */}
       <div className="p-4 h-96 overflow-y-scroll flex flex-col space-y-4">
         {messages.map((message) => (
           <div
@@ -55,11 +74,14 @@ const Chatbot: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Input + Send button */}
       <div className="p-4 border-t border-gray-200 flex">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown} // <- Press Enter to send
           className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-blue"
           placeholder="Type your message..."
         />

@@ -36,9 +36,16 @@ This project is a chatbot designed to assist the residents of the city of Anthon
 
    This will start the following services:
 
-   - `ollama`: The main service for the chatbot, which will pull the necessary models (`llama3.1` and `mxbai-embed-large`).
+   - `ollama`: The main service for the chatbot, which will pull the necessary models (`mistral` and `mxbai-embed-large`).
    - `redis-stack`: The Redis stack for storing vector data.
    - `redis-insight`: A web interface for managing Redis.
+
+   If the models aren't working, try downloading those directly from the container :
+
+   ```
+   docker compose exec ollama ollama pull mistral
+   docker compose exec ollama ollama pull mxbai-embed-large
+   ```
 
 5. Access the services:
    - Chatbot Web UI: [http://localhost:3000](http://localhost:3000)

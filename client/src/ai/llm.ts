@@ -1,6 +1,6 @@
 import { ChatOllama } from "@langchain/ollama";
 
-const MODEL_NAME = "llama3.1";
+const MODEL_NAME = "mistral";
 
 export const llm = new ChatOllama({
   model: MODEL_NAME,

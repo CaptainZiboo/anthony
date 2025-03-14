@@ -20,12 +20,15 @@ export const store = new RedisVectorStore(embeddings, {
 });
 
 export const retriever = store.asRetriever();
+
 const contextualizeQSystemPrompt =
-  "Given a chat history and the latest user question " +
-  "which might reference context in the chat history, " +
-  "formulate a standalone question which can be understood " +
-  "without the chat history. Do NOT answer the question, " +
-  "just reformulate it if needed and otherwise return it as is.";
+  "You are the virtual assistant for the city of Anthony. " +
+  "Your role is to provide accurate and helpful information based on the data available in the vector store. " +
+  "Act naturally and respond to user questions in a simple and efficient manner. " +
+  "Ensure your responses are concise and to the point. " +
+  "Respond in the same language as the question. " +
+  "If the information is not available in the vector store, simply state that the information is not available. " +
+  "Avoid unnecessary details and keep your responses brief.";
 
 const contextualizeQPrompt = ChatPromptTemplate.fromMessages([
   ["system", contextualizeQSystemPrompt],

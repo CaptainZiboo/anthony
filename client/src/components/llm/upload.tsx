@@ -25,7 +25,6 @@ const UploadForm = () => {
       formData.append("files", file);
     });
 
-    // Send formData to server-side endpoint
     const response = await fetch("/api/llm/upload", {
       method: "POST",
       body: formData,
@@ -34,33 +33,49 @@ const UploadForm = () => {
     if (response.ok) {
       const data = await response.json();
       console.log("Server response:", data);
-      // File uploaded successfully
-      // router.push("/success"); // Uncomment if you want to navigate to a success page
     } else {
-      // Handle error
       alert("File upload failed");
     }
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input type="file" multiple onChange={handleFileChange} />
-        <button type="submit">Upload Files</button>
+    <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-lg">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          type="file"
+          multiple
+          onChange={handleFileChange}
+          className="block w-full text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="bg-custom-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition"
+        >
+          Upload Files
+        </button>
       </form>
-      <div>
-        <h3>Selected Files:</h3>
-        <ul>
-          {files.map((file, index) => (
-            <li key={index}>
-              {file.name}{" "}
-              <button type="button" onClick={() => handleRemoveFile(index)}>
-                &times;
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {files.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold text-black">Selected Files:</h3>
+          <ul className="mt-2 space-y-2">
+            {files.map((file, index) => (
+              <li
+                key={index}
+                className="flex justify-between items-center bg-gray-100 p-2 rounded-md"
+              >
+                <span className="text-sm text-black">{file.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFile(index)}
+                  className="text-red-500 hover:text-red-700 transition"
+                >
+                  &times;
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

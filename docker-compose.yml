@@ -1,12 +1,14 @@
 services:
   ollama:
+    build:
+      context: ./llm
+      dockerfile: Dockerfile
     volumes:
       - ./data/ollama:/root/.ollama
     container_name: ollama
     pull_policy: always
     tty: true
     restart: unless-stopped
-    image: ollama/ollama:latest
     ports:
       - 11434:11434
 

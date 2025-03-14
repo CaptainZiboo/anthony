@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import ToggleThemeButton from "@/components/ToggleThemeButton";
 import { useTheme } from "@/context/theme-context";
-import { useTextSize } from "@/context/TextSizeContext"; 
+import { useTextSize } from "@/context/TextSizeContext";
 import TextSizeButton from "@/components/ui/TextSizeButton";
-
 
 interface Message {
   id: number;
@@ -26,12 +25,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
     sender: "bot",
   };
 
-  const { isDarkMode } = useTheme(); 
-  // const { fontSize, setFontSize } = useTextSize(); 
+  const { isDarkMode } = useTheme();
+  // const { fontSize, setFontSize } = useTextSize();
 
-  const [messages, setMessages] = useState<Message[]>([initialMessage]); 
-  const [input, setInput] = useState<string>(""); 
-  const [isLoading, setIsLoading] = useState<boolean>(false); 
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
+  const [id, setId] = useState<string | undefined>(undefined);
+  const [input, setInput] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(
+    JSON.parse(localStorage.getItem("isLoading") || "false")
+  );
+
+  useEffect(() => {
+    localStorage.setItem("isLoading", JSON.stringify(isLoading));
+  }, [isLoading]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,7 +47,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
     if (isLoading && pendingMessage) {
       handleSend(pendingMessage, true);
     }
-  }, [isLoading]);
+  }, []);
 
   // Gestion de la fermeture avec la touche Esc
   useEffect(() => {
@@ -65,7 +71,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
     const messageToSend = overrideInput || input.trim();
     if (!messageToSend || isLoading) return;
 
-    setMessages((prev) => [...prev, { id: Date.now(), text: messageToSend, sender: "user" }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), text: messageToSend, sender: "user" },
+    ]);
 
     if (!isRetry) {
       setInput("");
@@ -76,14 +85,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
 
     fetch("/api/llm/chat", {
       method: "POST",
-      body: JSON.stringify({ message: messageToSend }),
+      body: JSON.stringify({ message: messageToSend, chat_id: id }),
       headers: {
         "Content-Type": "application/json",
       },
     })
       .then((res) => res.json())
       .then((data) => {
-        setMessages((prev) => [...prev, { id: Date.now(), text: data.response, sender: "bot" }]);
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now(), text: data.response, sender: "bot" },
+        ]);
+        setId(data.id);
+        localStorage.removeItem("pendingMessage");
       })
       .catch(() => {
         setMessages((prev) => [
@@ -116,16 +130,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
       role="dialog"
       aria-modal="true"
       aria-label="Chatbot"
-      className={`fixed inset-0 flex items-end justify-center z-50 sm:items-center sm:justify-end transition-opacity ${isDarkMode ? "dark" : ""}`}
+      className={`fixed inset-0 flex items-end justify-center z-50 sm:items-center sm:justify-end transition-opacity ${
+        isDarkMode ? "dark" : ""
+      }`}
     >
       <div
         className="absolute inset-0 bg-black opacity-50"
         onClick={onClose}
         aria-hidden="true"
       ></div>
-      <div
-        className="relative w-full max-w-md bg-white rounded-lg shadow-lg flex flex-col h-full sm:h-auto sm:max-h-[90vh] dark:bg-gray-900 dark:text-white "
-      >
+      <div className="relative w-full max-w-md bg-white rounded-lg shadow-lg flex flex-col h-full sm:h-auto sm:max-h-[90vh] dark:bg-gray-900 dark:text-white ">
         <div className="p-4 bg-custom-blue text-white text-center font-bold rounded-t-lg dark:bg-gray-900 dark:text-white p-4 ">
           Chatbot
           <ToggleThemeButton /> {/* Ajouter le bouton de bascule ici */}
@@ -133,7 +147,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
 
         {/* Contrôler la taille du texte */}
         <div className="p-4 flex justify-between dark:text-white p-4">
-        <TextSizeButton />
+          <TextSizeButton />
         </div>
 
         {/* Historique des messages */}
@@ -145,7 +159,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
           {messages.map((message, index) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
+              className={`flex ${
+                message.sender === "bot" ? "justify-start" : "justify-end"
+              }`}
             >
               <div
                 className={`p-3 rounded-lg max-w-xs ${
@@ -224,6 +240,34 @@ const Chatbot: React.FC<ChatbotProps> = ({ isVisible, onClose }) => {
         >
           <XMarkIcon className="w-6 h-6" />
         </button>
+
+        {/* Ajout des styles pour l'animation */}
+        <style jsx>{`
+          @keyframes bounce {
+            0%,
+            80%,
+            100% {
+              transform: translateY(0);
+            }
+            40% {
+              transform: translateY(-8px);
+            }
+          }
+
+          .animate-bounce1 {
+            animation: bounce 1.2s infinite ease-in-out;
+          }
+
+          .animate-bounce2 {
+            animation: bounce 1.2s infinite ease-in-out;
+            animation-delay: 0.2s;
+          }
+
+          .animate-bounce3 {
+            animation: bounce 1.2s infinite ease-in-out;
+            animation-delay: 0.4s;
+          }
+        `}</style>
       </div>
     </div>
   );

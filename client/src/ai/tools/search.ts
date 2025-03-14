@@ -1,4 +1,4 @@
-import { retriever } from "@/lib/vector/store";
+import { retriever } from "@/ai/store";
 import { createRetrieverTool } from "langchain/tools/retriever";
 
 export const retriever_tool = createRetrieverTool(retriever, {

@@ -13,11 +13,8 @@ import {
   SupportedTextSplitterLanguages,
   TokenTextSplitter,
 } from "langchain/text_splitter";
-import { OllamaEmbeddings } from "@langchain/ollama";
-import { RedisVectorStore } from "@langchain/redis";
-import { createClient } from "redis";
 import { redis } from "@/lib/redis";
-import { store } from "@/lib/vector/store";
+import { store } from "@/ai/store";
 
 export const config = {
   api: {
@@ -118,7 +115,7 @@ export async function POST(request: Request) {
       if (file instanceof File) {
         const documents = await getDocuments(file);
 
-        await redis.connect();
+        if (!redis.isOpen) await redis.connect();
 
         await store.addDocuments(documents);
       }
@@ -133,6 +130,7 @@ export async function POST(request: Request) {
       }
     );
   } catch (error: unknown) {
+    console.error(error);
     return Response.json({ error }, { status: 500 });
   }
 }

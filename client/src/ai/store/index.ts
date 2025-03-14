@@ -1,6 +1,7 @@
 import { RedisVectorStore } from "@langchain/redis";
 import { redis } from "@/lib/redis";
-import { ChatOllama, OllamaEmbeddings } from "@langchain/ollama";
+import { llm } from "@/ai/llm";
+import { OllamaEmbeddings } from "@langchain/ollama";
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
 
 import {
@@ -19,10 +20,6 @@ export const store = new RedisVectorStore(embeddings, {
 });
 
 export const retriever = store.asRetriever();
-
-/*
-TODO : Figure out if this is usefull
-
 const contextualizeQSystemPrompt =
   "Given a chat history and the latest user question " +
   "which might reference context in the chat history, " +
@@ -40,7 +37,7 @@ const historyAwareRetriever = await createHistoryAwareRetriever({
   llm,
   retriever,
   rephrasePrompt: contextualizeQPrompt,
-}); */
+});
 
 export const vector = {
   store,

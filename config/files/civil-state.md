@@ -40,8 +40,8 @@
 - **Description :** Démarche essentielle pour tout enfant né en France.
 - **Démarche :** Sur rendez-vous à la mairie du lieu de naissance. Documents fournis par la maternité requis.
 - **Durée :** 10 minutes.
-- **Quand :**  
-  - **Déclaration de naissance :** Dans les 5 jours suivant la naissance.  
+- **Quand :**
+  - **Déclaration de naissance :** Dans les 5 jours suivant la naissance.
   - **Reconnaissance :** Rendez-vous possible à tout moment.
 - **Coût :** Gratuit.
 - **Contacts :** Mairie d’Anthony - Service État Civil.
@@ -52,8 +52,8 @@
 - **Description :** Union légitime de deux personnes selon la loi.
 - **Démarche :** Dépôt du dossier de mariage via l’espace citoyen. Pièces justificatives requises.
 - **Durée :** 10 minutes pour compléter la demande.
-- **Quand :**  
-  - Célébration au minimum 10 jours après publication des bans.  
+- **Quand :**
+  - Célébration au minimum 10 jours après publication des bans.
   - Prévoir 2 mois entre dépôt et célébration.
 - **Particularité :** Mariages entre le 8 juillet et le 30 août 2024 célébrés à l’Espace Vasarely.
 - **Coût :** Gratuit.

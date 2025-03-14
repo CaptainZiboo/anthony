@@ -6,6 +6,24 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+
+html {
+  font-size: 16px;  
+}
+
+
+html[data-font-size="small"] {
+  font-size: 14px;  
+}
+
+html[data-font-size="base"] {
+  font-size: 18px;  
+}
+
+html[data-font-size="large"] {
+  font-size: 25px;  
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -61,6 +79,7 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
+
 
 @layer base {
   * {
